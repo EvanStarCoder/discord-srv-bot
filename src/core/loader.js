@@ -1,13 +1,13 @@
 import { REST, Routes, Collection } from "discord.js";
 import fg from "fast-glob";
 import { useAppStore } from '@/store/app'
-
+/*
 const updateSlashCommands = async(commands) => {
     const rest = new REST({ version: 10 }).setToken(process.env.TOKEN);
     const result = await rest.put(
         Routes.applicationGuildCommands(
             process.env.APPLICATION_ID,
-            '972409339090448424'
+            '1014727794149822614' // Replace with your guild ID
         ),
         {
             body: commands,
@@ -15,6 +15,24 @@ const updateSlashCommands = async(commands) => {
     )
 
     console.log(result)
+}
+*/
+const updateSlashCommands = async(commands) => {
+    const rest = new REST({ version: 10 }).setToken(process.env.TOKEN);
+    
+    // 將 applicationGuildCommands 修改為 applicationCommands
+    // 並且不再需要傳入伺服器 ID
+    const result = await rest.put(
+        Routes.applicationCommands(
+            process.env.APPLICATION_ID
+        ),
+        {
+            body: commands,
+        }
+    )
+
+    console.log("成功註冊全域指令！");
+    console.log(result);
 }
 
 export const loadCommands = async () => {
