@@ -59,6 +59,7 @@ export const loadEvents = async () => {
     const client = appStore.client
     const files = await fg('./src/events/**/index.js')
     for(const file of files) {
+        console.log(`[Loader] 正在處理事件檔案: ${file}`);
         const eventFile = await import(file)
 
         if(eventFile.event.once) {

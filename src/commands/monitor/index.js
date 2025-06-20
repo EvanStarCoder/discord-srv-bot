@@ -4,6 +4,8 @@ import { useAppStore } from '@/store/app'; // 引入我們的狀態儲存
 export const command = new SlashCommandBuilder()
     .setName("monitor")
     .setDescription("控制對頻道的訊息監控")
+    // 【新增這一行】設置 DM 權限為 false
+    .setDMPermission(false) 
     .addSubcommand(subcommand =>
         subcommand
             .setName('start')
