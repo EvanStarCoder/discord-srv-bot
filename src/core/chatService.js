@@ -1,23 +1,27 @@
 import fs from 'fs';
 import path from "path";
 import { fileURLToPath } from 'url';
-import instruction from '@/media/prompt/instruction.js';
+//import instruction from '@/media/prompt/instruction.js';
 // 修正 __dirname 在 ES Modules 中的問題
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+/*const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);*/
 
 // 將設定檔路徑放在最上方，方便管理
 //const tempFilePath = path.join(__dirname, '../commands/chat/temp.json'); // 注意路徑向上移一層
 //const instruction = fs.readFileSync(path.join(__dirname, '../commands/chat/instruction.js'), 'utf-8'); // 直接讀取檔案內容
+const promptFilePath = path.join(process.cwd(), 'src', 'media', 'prompt', 'discord_shion_system_prompt.txt');
+const instruction = fs.readFileSync(promptFilePath, 'utf-8');
+
 const API_URL = 'http://4090p8000.huannago.com/v1/chat/completions';//'http://127.0.0.1:8080/v1/chat/completions';//'http://4090p8000.huannago.com/v1/chat/completions'; //
 
 /**
  * 取得 LLM 的回覆
  * @param {string} userMessage 使用者傳送的原始訊息
- * @param {string} userName 使用者的暱稱
+ * @param {string} llmMessage 使用者的暱稱
  * @returns {Promise<string|null>} AI 的回覆文字，或在失敗時回傳 null
  */
-export const getLlmReply = async (userMessage, userName) => {
+
+export const getLlmReply = async (llmHistory, llmMessage) => {
     // --- 讀取並準備對話歷史 ---
     /*let chatHistory = [];
     try {
@@ -31,8 +35,10 @@ export const getLlmReply = async (userMessage, userName) => {
     }*/
 
     // --- 建構 messages 陣列 ---
+    const instructionHistory = instruction.replaceAll('{{llmHistory}}', llmHistory)
+
     const messages = [
-        { role: 'system', content: instruction }, //
+        { role: 'system', content: instructionHistory }, //
     ];
     // 這裡可以加上載入歷史對話的邏輯 (目前您的程式碼是註解掉的)
     // 2. 載入歷史對話
@@ -41,9 +47,9 @@ export const getLlmReply = async (userMessage, userName) => {
         messages.push({ role: 'assistant', content: turn.assistant });
     });*/
 
-    const userMessageContent = `**${userName}**： 「${userMessage}」`;
-    messages.push({ role: 'user', content: userMessageContent }); //
-
+    //const userMessageContent = `**${userName}**： 「${userMessage}」`;
+    messages.push({ role: 'user', content: llmMessage }); //
+    console.log(messages); // 用於除錯
     // --- 發送 API 請求 ---
     try {
 

@@ -11,6 +11,19 @@ export const event = {
     once: false,
 };
 
+function escapeBackticks(text) {
+    if (!text) return '';
+    // 1. 使用一個不可能出現的字串作為程式碼區塊的臨時佔位符
+    const placeholder = '___CODE_BLOCK_DELIMITER___';
+    // 2. 保護程式碼區塊
+    let processedText = text.replaceAll('```', placeholder);
+    // 3. 將所有剩餘的單反引號加上跳脫字元
+    processedText = processedText.replaceAll('`', '\\`');
+    // 4. 將程式碼區塊還原
+    processedText = processedText.replaceAll(placeholder, '```');
+    return processedText;
+}
+
 export const action = async (message) => {
     // 忽略來自機器人的訊息
     if (message.author.bot) return;
@@ -64,6 +77,7 @@ export const action = async (message) => {
         const cleanMessage = message.content.replace(/<@!?&?\d+>/g, '').trim();
 
         let llmMessage;
+        let llmHistory;
         const isCurrentlyMonitoring = appStore.monitoringChannels.has(channelId);
 
         if (isCurrentlyMonitoring && appStore.chatHistories.has(channelId)) {
@@ -73,28 +87,44 @@ export const action = async (message) => {
             const botName = message.client.user.username;
             const formattedHistory = contextHistory.length > 0
                 ? contextHistory.map(msg => {
+                    const timeString = new Date(msg.timestamp).toLocaleTimeString('zh-TW');
+                    let line = `[${timeString}]`;
+                    console.log(`處理訊息: ${line}`); // 用於除錯
                     // 【修改】根據發言者是否為機器人，決定使用的格式
                     if (msg.author === botName) {
                         // 如果是機器人自己，使用新格式
-                        return `**[${msg.author}]**(妳自己)說: ${msg.content}`;
+                        return `${line} [${msg.author}](妳自己)說: ${msg.content}`;
                     } else {
                         // 如果是其他人，維持舊格式
-                        return `**[${msg.author}]**說: ${msg.content}`;
+                        return `${line} [${msg.author}]說: ${msg.content}`;
                     }
                 }).join('\n')
                 : '（尚無對話紀錄）';
 
-            const currentUserInput = `當前對話\n**[${nickname}]**對妳說: ${cleanMessage || '...'}`;
-            llmMessage = `對話紀錄:\n${formattedHistory}\n\n${currentUserInput}`;
-            console.log("--- Sending context to LLM ---"); // 可選的偵錯訊息
+            //const currentUserInput = `# 當前對話紀錄\n**[${nickname}]**對妳說: ${cleanMessage || '...'}`;
+            //llmMessage = `對話紀錄:\n${formattedHistory}\n\n${currentUserInput}`;
+            llmHistory = `${formattedHistory}`;
+            
+            //llmMessage = `**${nickname}**對妳說:` + cleanMessage || `(**${nickname}**標記妳。)`;
+            //llmMessage = `**${nickname}**對妳說: ${cleanMessage}` || `(**${nickname}**標記妳。)`;
+            /*console.log("--- Sending context to LLM ---"); // 可選的偵錯訊息
             console.log(llmMessage);
-            console.log("-----------------------------");
+            console.log("-----------------------------");*/
             
         } else {
-            llmMessage = cleanMessage || "哈囉！";
+            llmHistory = '（尚無對話紀錄）';
+            //llmMessage = cleanMessage || `(**${nickname}**標記妳。)`;
         }
-        
-        const assistantReply = await getLlmReply(llmMessage, nickname);
+
+        if (!cleanMessage) {
+            llmMessage = `([${nickname}]標記妳。)`;
+        } else {
+            llmMessage = `[${nickname}]對妳說: ${cleanMessage}`;
+        }
+
+
+
+        const assistantReply = await getLlmReply(llmHistory, llmMessage);
 
         if (assistantReply) {
             // 這裡我們假設 assistantReply 裡面可能包含 <think> 標籤
@@ -105,8 +135,10 @@ export const action = async (message) => {
             // 【新增】使用 OpenCC 轉換簡體中文到繁體中文
             //const convertedReply = convert(assistantReply);
 
-            const botReplyMessage = await message.reply(finalReplyToShow);
-            console.log(finalReplyToShow);
+            //const finalReplyToShow = escapeBackticks(cleanedReply);
+            //console.log("LLM 回覆內容:", finalReplyToShow);
+            const botReplyMessage = await message.reply(escapeBackticks(finalReplyToShow));
+            //console.log(finalReplyToShow);
             //const thinkReplyMessage = await message.reply(assistantReply);
             //const botReplyMessage = await message.reply(assistantReply);
 
@@ -120,7 +152,7 @@ export const action = async (message) => {
                     history.push({
                         id: botReplyMessage.id,
                         author: botReplyMessage.author.username,
-                        content: botReplyMessage.content,
+                        content: finalReplyToShow,
                         timestamp: botReplyMessage.createdTimestamp,
                     });
                     if (history.length > 10) {
