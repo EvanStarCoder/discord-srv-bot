@@ -32,6 +32,45 @@ export const action = async (message) => {
     const channelId = message.channel.id;
 
     // =======================================================
+    // 【新功能】X/Twitter/Instagram 連結自動轉換 (升級版)
+    // =======================================================
+    // 【修改】擴充 Regex，讓它可以同時捕獲 x.com, twitter.com 和 instagram.com 的連結
+    const linkRegex = /https?:\/\/(twitter|x|www\.instagram)\.com\/([a-zA-Z0-9_]+\/status\/[0-9]+|[a-zA-Z0-9_.\/]+)/g;
+    const matches = message.content.match(linkRegex);
+
+    if (matches && matches.length > 0) {
+        // ... (延遲邏輯不變) ...
+
+        // 【修改】加入對 Instagram 的處理
+        const fixedLinks = matches.map(url => {
+            if (url.includes('twitter.com')) {
+                return url.replace('twitter.com', 'fxtwitter.com');
+            } else if (url.includes('x.com')) {
+                return url.replace('x.com', 'fixupx.com');
+            } else if (url.includes('instagram.com')) {
+                return url.replace('instagram.com', 'ddinstagram.com');
+            }
+            return url;
+        });
+
+        const replyContent = fixedLinks.join('\n');
+        const authorInfo = `由 ${message.author.toString()} 分享：`;
+        const finalMessage = `${authorInfo}\n${replyContent}`;
+
+        try {
+            await message.channel.send({
+                content: finalMessage,
+                allowedMentions: {
+                    users: [message.author.id]
+                }
+            });
+            await message.delete();
+        } catch (error) {
+            console.error("處理連結時發生錯誤:", error);
+        }
+    }
+
+    // =======================================================
     // 區塊 1: 優先記錄所有來自"被監控頻道"的使用者訊息
     // =======================================================
     if (appStore.monitoringChannels.has(channelId)) {
@@ -99,7 +138,7 @@ export const action = async (message) => {
                         return `${line} [${msg.author}]說: ${msg.content}`;
                     }
                 }).join('\n')
-                : '（尚無對話紀錄）';
+                : `（尚無對話紀錄）`;
 
             //const currentUserInput = `# 當前對話紀錄\n**[${nickname}]**對妳說: ${cleanMessage || '...'}`;
             //llmMessage = `對話紀錄:\n${formattedHistory}\n\n${currentUserInput}`;
@@ -112,7 +151,7 @@ export const action = async (message) => {
             console.log("-----------------------------");*/
             
         } else {
-            llmHistory = '（尚無對話紀錄）';
+            llmHistory = `（尚無對話紀錄）`;
             //llmMessage = cleanMessage || `(**${nickname}**標記妳。)`;
         }
 
@@ -135,9 +174,21 @@ export const action = async (message) => {
             // 【新增】使用 OpenCC 轉換簡體中文到繁體中文
             //const convertedReply = convert(assistantReply);
 
+/*        // 送出回覆，並設定為不提及原發文者，避免干擾
+        await message.reply({
+            content: replyContent,
+            allowedMentions: {
+                repliedUser: false
+            }
+        });*/
             //const finalReplyToShow = escapeBackticks(cleanedReply);
             //console.log("LLM 回覆內容:", finalReplyToShow);
-            const botReplyMessage = await message.reply(escapeBackticks(finalReplyToShow));
+            const botReplyMessage = await message.reply({
+                content: escapeBackticks(finalReplyToShow)/*, 
+                allowedMentions: {
+                    repliedUser: false
+                }*/
+            });
             //console.log(finalReplyToShow);
             //const thinkReplyMessage = await message.reply(assistantReply);
             //const botReplyMessage = await message.reply(assistantReply);
