@@ -1,6 +1,7 @@
 import { getLlmReply } from '@/core/chatService.js';
 import { useAppStore } from '@/store/app';
 
+
 //import { OpenCC } from 'opencc';
 
 // 【修改】使用 createConverter 建立一個同步的轉換函式
@@ -34,14 +35,19 @@ export const action = async (message) => {
     // =======================================================
     // 【新功能】X/Twitter/Instagram 連結自動轉換 (升級版)
     // =======================================================
-    // 【修改】擴充 Regex，讓它可以同時捕獲 x.com, twitter.com 和 instagram.com 的連結
-    const linkRegex = /https?:\/\/(twitter|x|www\.instagram)\.com\/([a-zA-Z0-9_]+\/status\/[0-9]+|[a-zA-Z0-9_.\/]+)/g;
+    const linkRegex = /https?:\/\/(twitter|x|www\.instagram|www\.facebook)\.com\/([a-zA-Z0-9_]+\/status\/[0-9]+|[a-zA-Z0-9_.\/-]+)/g;
     const matches = message.content.match(linkRegex);
 
     if (matches && matches.length > 0) {
-        // ... (延遲邏輯不變) ...
+        // 檢查機器人是否有管理訊息的權限，沒有就直接返回，避免出錯
+        if (!message.guild.members.me?.permissions.has('ManageMessages')) {
+            console.log(`[權限不足] 無法在頻道 ${message.channel.name} 抑制預覽，因為缺少「管理訊息」權限。`);
+            return;
+        }
 
-        // 【修改】加入對 Instagram 的處理
+        // 延遲一小段時間，確保 Discord 已經處理了原始訊息
+        await new Promise(resolve => setTimeout(resolve, 500)); // 延遲 1 秒
+
         const fixedLinks = matches.map(url => {
             if (url.includes('twitter.com')) {
                 return url.replace('twitter.com', 'fxtwitter.com');
@@ -49,24 +55,29 @@ export const action = async (message) => {
                 return url.replace('x.com', 'fixupx.com');
             } else if (url.includes('instagram.com')) {
                 return url.replace('instagram.com', 'ddinstagram.com');
+            } else if (url.includes('www.instagram.com')) {
+                return url.replace('www.instagram.com', 'ddinstagram.com');
+            } else if (url.includes('www.facebook.com')) {
+                return url.replace('www.facebook.com', 'puli-dc-fix.huannago.com');
+            }  else if (url.includes('facebook.com')) {
+                return url.replace('facebook.com', 'puli-dc-fix.huannago.com');
             }
             return url;
         });
 
+        // 【修改】只包含修復後的連結，不加任何額外文字
         const replyContent = fixedLinks.join('\n');
-        const authorInfo = `由 ${message.author.toString()} 分享：`;
-        const finalMessage = `${authorInfo}\n${replyContent}`;
 
         try {
+            // 【修改】1. 抑制原始訊息的預覽
+            await message.suppressEmbeds(true);
+
+            // 【修改】2. 發送只包含連結的新訊息
             await message.channel.send({
-                content: finalMessage,
-                allowedMentions: {
-                    users: [message.author.id]
-                }
+                content: replyContent,
             });
-            await message.delete();
         } catch (error) {
-            console.error("處理連結時發生錯誤:", error);
+            console.error("抑制預覽或發送新連結時發生錯誤:", error);
         }
     }
 
