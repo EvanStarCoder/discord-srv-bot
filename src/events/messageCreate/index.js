@@ -58,9 +58,9 @@ export const action = async (message) => {
             } else if (url.includes('www.instagram.com')) {
                 return url.replace('www.instagram.com', 'ddinstagram.com');
             } else if (url.includes('www.facebook.com')) {
-                return url.replace('www.facebook.com', 'puli-dc-fix.huannago.com');
+                return url.replace('www.facebook.com', process.env.DC_FIX_API);
             }  else if (url.includes('facebook.com')) {
-                return url.replace('facebook.com', 'puli-dc-fix.huannago.com');
+                return url.replace('facebook.com', process.env.DC_FIX_API);
             }
             return url;
         });

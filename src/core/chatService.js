@@ -12,8 +12,6 @@ const __dirname = path.dirname(__filename);*/
 const promptFilePath = path.join(process.cwd(), 'src', 'media', 'prompt', 'discord_shion_system_prompt.txt');
 const instruction = fs.readFileSync(promptFilePath, 'utf-8');
 
-const API_URL = 'http://4090p8000.huannago.com/v1/chat/completions';//'http://127.0.0.1:8080/v1/chat/completions';//'http://4090p8000.huannago.com/v1/chat/completions'; //
-
 /**
  * 取得 LLM 的回覆
  * @param {string} userMessage 使用者傳送的原始訊息
@@ -54,7 +52,7 @@ export const getLlmReply = async (llmHistory, llmMessage) => {
     try {
 
         //console.log(messages);
-        const response = await fetch(API_URL, {
+        const response = await fetch(`http://${process.env.LLM_API}/v1/chat/completions`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
