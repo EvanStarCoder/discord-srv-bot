@@ -19,7 +19,7 @@ const instruction = fs.readFileSync(promptFilePath, 'utf-8');
  * @returns {Promise<string|null>} AI 的回覆文字，或在失敗時回傳 null
  */
 
-export const getLlmReply = async (llmHistory, llmMessage) => {
+export const getLlmReply = async (llmHistory, llmMessage, message) => {
     // --- 讀取並準備對話歷史 ---
     /*let chatHistory = [];
     try {
@@ -31,9 +31,11 @@ export const getLlmReply = async (llmHistory, llmMessage) => {
         console.error("讀取或解析 temp.json 失敗:", e);
         chatHistory = []; // 發生錯誤時重置歷史
     }*/
+    const botDisplayName = message.guild?.members.me?.displayName ?? message.client.user.username
+    const finalInstruction = instruction.replaceAll('{{BOT_NICKNAME}}', botDisplayName);
 
     // --- 建構 messages 陣列 ---
-    const instructionHistory = instruction.replaceAll('{{llmHistory}}', llmHistory)
+    const instructionHistory = finalInstruction.replaceAll('{{llmHistory}}', llmHistory)
 
     const messages = [
         { role: 'system', content: instructionHistory }, //

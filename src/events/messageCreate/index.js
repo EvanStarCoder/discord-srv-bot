@@ -27,7 +27,9 @@ function escapeBackticks(text) {
 
 export const action = async (message) => {
     // 忽略來自機器人的訊息
-    if (message.author.bot) return;
+    //if (message.author.bot) return;
+    // 如果訊息的發送者 ID，和我們機器人自己的 ID 相同，就忽略
+    if (message.author.id === message.client.user.id) return;
 
     const appStore = useAppStore();
     const channelId = message.channel.id;
@@ -174,7 +176,7 @@ export const action = async (message) => {
 
 
 
-        const assistantReply = await getLlmReply(llmHistory, llmMessage);
+        const assistantReply = await getLlmReply(llmHistory, llmMessage, message);
 
         if (assistantReply) {
             // 這裡我們假設 assistantReply 裡面可能包含 <think> 標籤
