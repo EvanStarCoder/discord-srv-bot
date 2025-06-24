@@ -133,12 +133,12 @@ export const execute = async (interaction) => {
     } catch (error) {
         console.error("播放指令執行失敗:", error);
         await interaction.editReply('糟糕，執行播放指令時發生了錯誤！無法開始播放。');
-    } finally {
+    } /*finally {
         // 無論成功或失敗，最後都確保連接被關閉
         const connection = getVoiceConnection(interaction.guild.id);
         if (connection && connection.state.status !== VoiceConnectionStatus.Destroyed) {
             console.log("指令流程結束，正在斷開連接...");
             connection.destroy();
         }
-    }
+    }*/
 };
