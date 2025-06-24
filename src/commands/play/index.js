@@ -68,6 +68,7 @@ export const execute = async (interaction) => {
             downloader: 'ffmpeg',
             // downloaderArgs 可以在需要時傳遞額外參數給 ffmpeg
             downloaderArgs: 'ffmpeg_i:-reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 5',
+            forceIpv4: true,
             // //cookies: cookieFilePath,
         });
 
