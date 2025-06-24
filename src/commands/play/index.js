@@ -38,6 +38,7 @@ export const execute = async (interaction) => {
         });
     }
 
+    //let connection;
     await interaction.deferReply();
 
     try {
@@ -60,7 +61,7 @@ export const execute = async (interaction) => {
         console.log(`影片資訊獲取成功: ${videoTitle}`);
 
         const stream = youtubedl.exec(videoUrl, {
-            o: '-', q: '', f: 'bestaudio', r: '100K', //cookies: cookieFilePath,
+            o: '-', q: '', f: 'bestaudio', //r: '100K', //cookies: cookieFilePath,
         });
 
         if (!stream.stdout) {
@@ -118,6 +119,17 @@ export const execute = async (interaction) => {
 
         // 4. 等待播放完畢
         await entersState(player, AudioPlayerStatus.Idle, 24 * 60 * 60 * 1000); // 等待最多24小時直到閒置
+        player.on(AudioPlayerStatus.Idle, () => {
+            console.log('播放器進入閒置狀態，準備斷開連接。');
+            if (connection?.state.status !== VoiceConnectionStatus.Destroyed) {
+                connection.destroy();
+            }
+        });
+
+        player.on('error', error => {
+            console.error(`播放器錯誤: ${error.message}`);
+            // 我們讓 idle 事件來處理斷開，這裡只印出錯誤
+        });
     } catch (error) {
         console.error("播放指令執行失敗:", error);
         await interaction.editReply('糟糕，執行播放指令時發生了錯誤！無法開始播放。');
