@@ -61,13 +61,20 @@ export const execute = async (interaction) => {
         console.log(`影片資訊獲取成功: ${videoTitle}`);
 
         const stream = youtubedl.exec(videoUrl, {
-            o: '-', q: '', f: 'bestaudio', //r: '100K', //cookies: cookieFilePath,
+            o: '-', 
+            q: '', 
+            f: 'bestaudio', 
+            //r: '100K', 
+            downloader: 'ffmpeg',
+            // downloaderArgs 可以在需要時傳遞額外參數給 ffmpeg
+            downloaderArgs: 'ffmpeg_i:-reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 5',
+            // //cookies: cookieFilePath,
         });
 
         stream.catch(error => {
             console.error(`[yt-dlp Process] 子進程執行失敗:`, error.message);
         });
-        
+
         if (!stream.stdout) {
             throw new Error('無法獲取音訊串流。');
         }
