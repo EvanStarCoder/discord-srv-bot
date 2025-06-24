@@ -13,6 +13,7 @@ const client = new Client({ intents: [
     GatewayIntentBits.Guilds,
     GatewayIntentBits.GuildMessages,    // <-- 新增這一行
     GatewayIntentBits.MessageContent,   // <-- 新增這一行 
+    GatewayIntentBits.GuildVoiceStates, // <-- 新增這一行
 ] 
 });
 const appStore = useAppStore()
