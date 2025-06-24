@@ -37,46 +37,45 @@ export const action = async (message) => {
     // =======================================================
     // 【新功能】X/Twitter/Instagram 連結自動轉換 (升級版)
     // =======================================================
-    const linkRegex = /https?:\/\/(?:www\.)?(twitter|x|instagram|facebook)\.com\/\S+/g;
+    const linkRegex = /https?:\/\/(?:www\.)?(twitter|x|instagram|facebook|bilibili)\.com\/\S+/g;
     const matches = message.content.match(linkRegex);
 
     if (matches && matches.length > 0) {
-        // 檢查機器人是否有管理訊息的權限，沒有就直接返回，避免出錯
         if (!message.guild.members.me?.permissions.has('ManageMessages')) {
             console.log(`[權限不足] 無法在頻道 ${message.channel.name} 抑制預覽，因為缺少「管理訊息」權限。`);
             return;
         }
 
-        // 延遲一小段時間，確保 Discord 已經處理了原始訊息
-        await new Promise(resolve => setTimeout(resolve, 500)); // 延遲 1 秒
+        await new Promise(resolve => setTimeout(resolve, 500));
 
         const fixedLinks = matches.map(url => {
-            if (url.includes('twitter.com')) {
-                return url.replace('twitter.com', 'fxtwitter.com');
-            } else if (url.includes('x.com')) {
-                return url.replace('x.com', 'fixupx.com');
-            } else if (url.includes('instagram.com')) {
-                return url.replace('instagram.com', 'ddinstagram.com');
-            } else if (url.includes('www.instagram.com')) {
-                return url.replace('www.instagram.com', 'ddinstagram.com');
-            } else if (url.includes('www.facebook.com')) {
-                return url.replace('www.facebook.com', process.env.DC_FIX_API);
-            }  else if (url.includes('facebook.com')) {
-                return url.replace('facebook.com', process.env.DC_FIX_API);
+            if (/twitter\.com/.test(url)) {
+                return url.replace('twitter.com', process.env.TWITTER_FIX_API);
+            } else if (/x\.com/.test(url)) {
+                return url.replace('x.com', process.env.X_FIX_API);
+            } else if (/instagram\.com/.test(url)) {
+                return url.replace('instagram.com', process.env.IG_FIX_API);
+            } else if (/facebook\.com/.test(url)) {
+                // 假設您的 FB 服務網域是 puli-dc-fix.huannago.com
+                return url.replace(/www\.facebook\.com|facebook\.com/, process.env.DC_FIX_API);
+            }
+            // 【修改二】新增 Bilibili 的替換規則
+            else if (/bilibili\.com/.test(url)) {
+                return url.replace(/(?:www\.)?bilibili\.com/, process.env.BILIBILI_FIX_API);
             }
             return url;
         });
 
-        // 【修改】只包含修復後的連結，不加任何額外文字
-        const replyContent = fixedLinks.join('\n');
+        const embedsToSend = fixedLinks.slice(0, 10).map(url => {
+            return new EmbedBuilder()
+                .setURL(url)
+                .setDescription('\u200b'); 
+        });
 
         try {
-            // 【修改】1. 抑制原始訊息的預覽
             await message.suppressEmbeds(true);
-
-            // 【修改】2. 發送只包含連結的新訊息
             await message.channel.send({
-                content: replyContent,
+                embeds: embedsToSend,
             });
         } catch (error) {
             console.error("抑制預覽或發送新連結時發生錯誤:", error);
