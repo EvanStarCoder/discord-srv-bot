@@ -66,16 +66,16 @@ export const action = async (message) => {
             return url;
         });
 
-        const embedsToSend = fixedLinks.slice(0, 10).map(url => {
-            return new EmbedBuilder()
-                .setURL(url)
-                .setDescription('\u200b'); 
-        });
+        // 【修改】只包含修復後的連結，不加任何額外文字
+        const replyContent = fixedLinks.join('\n');
 
         try {
+            // 【修改】1. 抑制原始訊息的預覽
             await message.suppressEmbeds(true);
+
+            // 【修改】2. 發送只包含連結的新訊息
             await message.channel.send({
-                embeds: embedsToSend,
+                content: replyContent,
             });
         } catch (error) {
             console.error("抑制預覽或發送新連結時發生錯誤:", error);
