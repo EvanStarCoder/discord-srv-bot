@@ -49,6 +49,7 @@ export const execute = async (interaction) => {
             quiet: true,
             dumpSingleJson: true,
             defaultSearch: 'ytsearch',
+            forceIpv4: true,
             //cookies: cookieFilePath,
         });
 
@@ -63,11 +64,11 @@ export const execute = async (interaction) => {
         const stream = youtubedl.exec(videoUrl, {
             o: '-', 
             q: '', 
-            f: 'bestaudio', 
+            f: 'bestaudio[ext=opus]/bestaudio[ext=m4a]/bestaudio',
             //r: '100K', 
-            downloader: 'ffmpeg',
+            //downloader: 'ffmpeg',
             // downloaderArgs 可以在需要時傳遞額外參數給 ffmpeg
-            downloaderArgs: 'ffmpeg_i:-reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 5',
+            //downloaderArgs: 'ffmpeg_i:-reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 5',
             forceIpv4: true,
             // //cookies: cookieFilePath,
         });
@@ -81,12 +82,17 @@ export const execute = async (interaction) => {
         }
         
         // 【除錯二】監聽 yt-dlp 的 stdout 串流本身
-        stream.stdout.on('data', chunk => {
+        /*stream.stdout.on('data', chunk => {
             console.log(`[yt-dlp stream] 接收到 ${chunk.length} bytes 的音訊資料`);
+        });*/
+        // 【修改二】為子進程加上 stderr 監聽器，捕捉最底層的錯誤訊息
+        stream.stderr.on('data', data => {
+            console.error(`[yt-dlp stderr]: ${data.toString()}`);
         });
-        stream.stdout.on('end', () => {
-            console.log('[yt-dlp stream] 串流已結束');
+        stream.catch(error => {
+            console.error(`[yt-dlp Process] 子進程執行失敗:`, error.message);
         });
+
         stream.stdout.on('error', error => {
             console.error('[yt-dlp stream] 串流發生錯誤:', error);
         });
@@ -131,6 +137,11 @@ export const execute = async (interaction) => {
 
         // 4. 等待播放完畢
         await entersState(player, AudioPlayerStatus.Idle, 24 * 60 * 60 * 1000); // 等待最多24小時直到閒置
+
+        stream.stdout.on('end', () => {
+            console.log('[yt-dlp stream] 串流已結束');
+        });
+
         player.on(AudioPlayerStatus.Idle, () => {
             console.log('播放器進入閒置狀態，準備斷開連接。');
             if (connection?.state.status !== VoiceConnectionStatus.Destroyed) {
