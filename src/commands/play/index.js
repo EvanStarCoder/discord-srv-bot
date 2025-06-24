@@ -13,6 +13,7 @@ import {
 import youtubedl from 'youtube-dl-exec';
 import path from 'path';
 
+import ffmpeg from 'ffmpeg-static';
 //const cookieFilePath = path.join(process.cwd(), 'youtube_cookies.txt');
 
 export const command = new SlashCommandBuilder()
@@ -50,6 +51,7 @@ export const execute = async (interaction) => {
             dumpSingleJson: true,
             defaultSearch: 'ytsearch',
             forceIpv4: true,
+            ffmpegLocation: ffmpeg,
             //cookies: cookieFilePath,
         });
 
@@ -70,6 +72,7 @@ export const execute = async (interaction) => {
             // downloaderArgs 可以在需要時傳遞額外參數給 ffmpeg
             //downloaderArgs: 'ffmpeg_i:-reconnect 1 -reconnect_streamed 1 -reconnect_delay_max 5',
             forceIpv4: true,
+            ffmpegLocation: ffmpeg,
             // //cookies: cookieFilePath,
         });
 
