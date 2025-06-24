@@ -64,6 +64,10 @@ export const execute = async (interaction) => {
             o: '-', q: '', f: 'bestaudio', //r: '100K', //cookies: cookieFilePath,
         });
 
+        stream.catch(error => {
+            console.error(`[yt-dlp Process] 子進程執行失敗:`, error.message);
+        });
+        
         if (!stream.stdout) {
             throw new Error('無法獲取音訊串流。');
         }
