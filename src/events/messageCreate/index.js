@@ -37,7 +37,7 @@ export const action = async (message) => {
     // =======================================================
     // 【新功能】X/Twitter/Instagram 連結自動轉換 (升級版)
     // =======================================================
-    const linkRegex = /https?:\/\/(twitter|x|www\.instagram|www\.facebook)\.com\/([a-zA-Z0-9_]+\/status\/[0-9]+|[a-zA-Z0-9_.\/-]+)/g;
+    const linkRegex = /https?:\/\/(?:www\.)?(twitter|x|instagram|facebook)\.com\/\S+/g;
     const matches = message.content.match(linkRegex);
 
     if (matches && matches.length > 0) {
