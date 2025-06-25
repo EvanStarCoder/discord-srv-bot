@@ -9,7 +9,7 @@ const __dirname = path.dirname(__filename);*/
 // 將設定檔路徑放在最上方，方便管理
 //const tempFilePath = path.join(__dirname, '../commands/chat/temp.json'); // 注意路徑向上移一層
 //const instruction = fs.readFileSync(path.join(__dirname, '../commands/chat/instruction.js'), 'utf-8'); // 直接讀取檔案內容
-const promptFilePath = path.join(process.cwd(), 'src', 'media', 'prompt', 'discord_shion_system_prompt.txt');
+const promptFilePath = path.join(process.cwd(), 'src', 'media', 'prompt', 'discord_shion-dera_system_prompt.txt');
 const instruction = fs.readFileSync(promptFilePath, 'utf-8');
 
 /**
@@ -59,7 +59,7 @@ export const getLlmReply = async (llmHistory, llmMessage, message) => {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 messages: messages,
-                temperature: 1.5,
+                temperature: 1.25,
                 top_k: 40,
                 top_p: 0.95,
                 max_tokens: 4096,
