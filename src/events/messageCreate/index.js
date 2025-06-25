@@ -136,6 +136,7 @@ export const action = async (message) => {
             const contextHistory = history.slice(0, -1);
             // 【新增】先取得機器人自己的名字，方便後面比較
             const botName = message.client.user.username;
+            
             const formattedHistory = contextHistory.length > 0
                 ? contextHistory.map(msg => {
                     const timeString = new Date(msg.timestamp).toLocaleTimeString('zh-TW');
@@ -143,8 +144,9 @@ export const action = async (message) => {
                     console.log(`處理訊息: ${line}`); // 用於除錯
                     // 【修改】根據發言者是否為機器人，決定使用的格式
                     if (msg.author === botName) {
+                        const botDisplayName = message.guild?.members.me?.displayName ?? message.client.user.username
                         // 如果是機器人自己，使用新格式
-                        return `${line} [${msg.author}](妳自己)說: ${msg.content}`;
+                        return `${line} [${botDisplayName}](妳自己)說: ${msg.content}`;
                     } else {
                         // 如果是其他人，維持舊格式
                         return `${line} [${msg.author}]說: ${msg.content}`;
