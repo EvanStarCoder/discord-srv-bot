@@ -37,7 +37,7 @@ export const action = async (message) => {
     // =======================================================
     // 【新功能】X/Twitter/Instagram 連結自動轉換 (升級版)
     // =======================================================
-    const linkRegex = /https?:\/\/(?:www\.)?(twitter|x|instagram|facebook|bilibili)\.com\/\S+/g;
+    const linkRegex = /https?:\/\/(?:www\.)?(twitter|x|instagram|facebook|bilibili|tiktok)\.com\/\S+/g;
     const matches = message.content.match(linkRegex);
 
     if (matches && matches.length > 0) {
@@ -62,6 +62,9 @@ export const action = async (message) => {
             // 【修改二】新增 Bilibili 的替換規則
             else if (/bilibili\.com/.test(url)) {
                 return url.replace(/(?:www\.)?bilibili\.com/, process.env.BILIBILI_FIX_API);
+            }
+            else if (/tiktok\.com/.test(url)) {
+                return url.replace(/(?:www\.)?tiktok\.com/, process.env.TIKTOK_FIX_API);
             }
             return url;
         });
