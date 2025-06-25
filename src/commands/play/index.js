@@ -40,7 +40,7 @@ function getYtDlpPath() {
 
 export const command = new SlashCommandBuilder()
     .setName('play')
-    .setDescription('播放指定的 soundCloud、Spotify、B站、紅色撥放器影片音樂')
+    .setDescription('播放指定的 soundCloud、Spotify、B站、紅色播放器影片音樂')
     .addStringOption(option =>
         option.setName('url')
             .setDescription('影片的 URL 或搜尋關鍵字')

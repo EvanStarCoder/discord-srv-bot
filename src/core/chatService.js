@@ -59,8 +59,8 @@ export const getLlmReply = async (llmHistory, llmMessage, message) => {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 messages: messages,
-                temperature: 0.9,
-                top_k: 20,
+                temperature: 1.2,
+                top_k: 40,
                 top_p: 0.95,
                 max_tokens: 4096,
                 // ...其他參數
