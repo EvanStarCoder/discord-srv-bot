@@ -37,7 +37,7 @@ export const execute = async (interaction) => {
 
         // --- 【修改】處理影片的部分 ---
         // 直接從 JSON 中取得影片的 URL
-        const videoUrl = selectedItem.video_url;
+        const videoUrl = selectedItem.video_links;
         if (!videoUrl) {
             console.error(`項目 ${selectedItem.name} 缺少 video_url`);
             return interaction.editReply('啊！這個項目好像沒有影片連結耶... (´•̥ω•̥`)');
