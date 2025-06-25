@@ -1,6 +1,8 @@
 import { SlashCommandBuilder, EmbedBuilder, AttachmentBuilder } from 'discord.js';
 import fs from 'fs';
 import path from 'path';
+import { fixSocialLinks } from '@/core/utils.js';
+
 
 // 您的路徑定義不變
 const mediaListPath = path.join(process.cwd(), 'src', 'media', 'italian_brainrot', 'italian_brainrot_data.json');
@@ -43,6 +45,9 @@ export const execute = async (interaction) => {
             return interaction.editReply('啊！這個項目好像沒有影片連結耶... (´•̥ω•̥`)');
         }
 
+        // 【新增】在發送前，呼叫工具函式來修復連結
+        const fixedVideoUrl = fixSocialLinks(videoUrl);
+
         // --- 建立 Embed 的部分維持不變 ---
         const encodedImageName = encodeURIComponent(selectedItem.img);
         const embed = new EmbedBuilder()
@@ -53,7 +58,7 @@ export const execute = async (interaction) => {
         // --- 【修改】最終回覆的結構 ---
         // 我們現在發送一則訊息，它既有 content (影片連結)，也有 embeds 和 files (圖片)
         await interaction.editReply({
-            content: videoUrl, // 將影片 URL 作為訊息的主要內容
+            content: fixedVideoUrl, // 將影片 URL 作為訊息的主要內容
             embeds: [embed],
             files: [imageAttachment] // files 陣列中現在只剩下圖片
         });

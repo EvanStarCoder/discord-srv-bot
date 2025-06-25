@@ -1,6 +1,6 @@
 import { getLlmReply } from '@/core/chatService.js';
 import { useAppStore } from '@/store/app';
-
+import { fixSocialLinks } from '@/core/utils.js';
 
 //import { OpenCC } from 'opencc';
 
@@ -35,50 +35,22 @@ export const action = async (message) => {
     const channelId = message.channel.id;
 
     // =======================================================
-    // 【新功能】X/Twitter/Instagram 連結自動轉換 (升級版)
+    // 功能一：社群連結自動轉換 (重構版)
     // =======================================================
-    const linkRegex = /https?:\/\/(?:www\.)?(twitter|x|instagram|facebook|bilibili|tiktok)\.com\/\S+/g;
-    const matches = message.content.match(linkRegex);
+    // 【修改】將原本複雜的邏輯，簡化成對 fixSocialLinks 的一次呼叫
+    const fixedContent = fixSocialLinks(message.content);
 
-    if (matches && matches.length > 0) {
+    // 只有在連結真的被替換過時，才執行後續動作
+    if (fixedContent !== message.content) {
         if (!message.guild.members.me?.permissions.has('ManageMessages')) {
             console.log(`[權限不足] 無法在頻道 ${message.channel.name} 抑制預覽，因為缺少「管理訊息」權限。`);
             return;
         }
 
-        await new Promise(resolve => setTimeout(resolve, 500));
-
-        const fixedLinks = matches.map(url => {
-            if (/twitter\.com/.test(url)) {
-                return url.replace('twitter.com', process.env.TWITTER_FIX_API);
-            } else if (/x\.com/.test(url)) {
-                return url.replace('x.com', process.env.X_FIX_API);
-            } else if (/instagram\.com/.test(url)) {
-                return url.replace('instagram.com', process.env.IG_FIX_API);
-            } else if (/facebook\.com/.test(url)) {
-                // 假設您的 FB 服務網域是 puli-dc-fix.huannago.com
-                return url.replace(/www\.facebook\.com|facebook\.com/, process.env.DC_FIX_API);
-            }
-            // 【修改二】新增 Bilibili 的替換規則
-            else if (/bilibili\.com/.test(url)) {
-                return url.replace(/(?:www\.)?bilibili\.com/, process.env.BILIBILI_FIX_API);
-            }
-            else if (/tiktok\.com/.test(url)) {
-                return url.replace(/(?:www\.)?tiktok\.com/, process.env.TIKTOK_FIX_API);
-            }
-            return url;
-        });
-
-        // 【修改】只包含修復後的連結，不加任何額外文字
-        const replyContent = fixedLinks.join('\n');
-
         try {
-            // 【修改】1. 抑制原始訊息的預覽
             await message.suppressEmbeds(true);
-
-            // 【修改】2. 發送只包含連結的新訊息
             await message.channel.send({
-                content: replyContent,
+                content: fixedContent, // 發送被修復過的內容
             });
         } catch (error) {
             console.error("抑制預覽或發送新連結時發生錯誤:", error);
