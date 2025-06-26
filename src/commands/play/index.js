@@ -40,12 +40,34 @@ function getYtDlpPath() {
 
 export const command = new SlashCommandBuilder()
     .setName('play')
-    .setDescription('播放指定的 soundCloud、Spotify、B站、紅色播放器影片音樂')
+    .setDescription('播放指定的 YouTube 影片音樂')
     .addStringOption(option =>
         option.setName('url')
-            .setDescription('影片的 URL 或搜尋關鍵字')
+            .setDescription('YouTube 影片的 URL 或搜尋關鍵字')
             .setRequired(true)
     );
+
+// 檢測平台類型
+function detectPlatform(url) {
+    if (url.includes('tiktok.com')) return 'tiktok';
+    if (url.includes('youtube.com') || url.includes('youtu.be')) return 'youtube';
+    if (url.includes('twitch.tv')) return 'twitch';
+    return 'unknown';
+}
+
+// 根據平台獲取合適的格式選擇器
+function getFormatSelector(platform) {
+    switch (platform) {
+        case 'tiktok':
+            return 'bestaudio/best'; // TikTok 通常沒有分離的音頻流
+        case 'youtube':
+            return 'bestaudio[ext=opus]/bestaudio[ext=m4a]/bestaudio';
+        case 'twitch':
+            return 'bestaudio/best';
+        default:
+            return 'bestaudio/best'; // 通用格式
+    }
+}
 
 // 檢查是否為直播
 async function isLiveStream(url) {
@@ -162,13 +184,30 @@ export const execute = async (interaction) => {
         const query = interaction.options.getString('url');
         console.log(`正在處理: "${query}"`);
 
-        // 獲取影片資訊
-        const videoInfo = await youtubedl(query, {
-            quiet: true,
-            dumpSingleJson: true,
-            defaultSearch: 'ytsearch',
-            forceIpv4: true,
-        });
+        // 檢測平台類型
+        const platform = detectPlatform(query);
+        console.log(`檢測到平台: ${platform}`);
+
+        // 先嘗試獲取影片資訊，如果失敗則優雅處理
+        let videoInfo;
+        try {
+            videoInfo = await youtubedl(query, {
+                quiet: true,
+                dumpSingleJson: true,
+                defaultSearch: 'ytsearch',
+                forceIpv4: true,
+            });
+        } catch (infoError) {
+            console.error('獲取影片資訊時出錯:', infoError.message);
+            // 如果是不支援的平台，給出友善的錯誤訊息
+            if (platform === 'tiktok') {
+                return interaction.editReply('抱歉，TikTok 影片的音頻格式暫時不支援播放 😅');
+            } else if (platform === 'unknown') {
+                return interaction.editReply('抱歉，這個平台的影片格式暫時不支援播放 😅');
+            } else {
+                return interaction.editReply(`嗚嗚... 無法獲取影片資訊: ${infoError.message}`);
+            }
+        }
 
         if (!videoInfo) {
             return interaction.editReply(`嗚嗚... 找不到關於 "${query}" 的任何結果耶！`);
@@ -184,35 +223,50 @@ export const execute = async (interaction) => {
 
         if (isLive) {
             console.log('檢測到直播，使用專用處理方式...');
-            audioStream = await createLiveStream(videoUrl);
+            try {
+                audioStream = await createLiveStream(videoUrl);
+            } catch (liveError) {
+                console.error('直播處理失敗:', liveError.message);
+                return interaction.editReply('抱歉，直播音頻處理失敗，請稍後再試 😅');
+            }
         } else {
             console.log('檢測到一般影片，使用標準處理方式...');
             const ffmpegPath = getFFmpegPath();
+            const formatSelector = getFormatSelector(platform);
             
-            const stream = youtubedl.exec(videoUrl, {
-                o: '-', 
-                q: '', 
-                f: 'bestaudio[ext=opus]/bestaudio[ext=m4a]/bestaudio',
-                forceIpv4: true,
-                ffmpegLocation: ffmpegPath,
-            });
+            try {
+                const stream = youtubedl.exec(videoUrl, {
+                    o: '-', 
+                    q: '', 
+                    f: formatSelector, // 使用平台特定的格式選擇器
+                    forceIpv4: true,
+                    ffmpegLocation: ffmpegPath,
+                });
 
-            stream.stderr.on('data', data => {
-                const errorMsg = data.toString();
-                if (errorMsg.includes('ERROR')) {
-                    console.error(`[yt-dlp stderr]: ${errorMsg}`);
+                stream.stderr.on('data', data => {
+                    const errorMsg = data.toString();
+                    if (errorMsg.includes('ERROR')) {
+                        console.error(`[yt-dlp stderr]: ${errorMsg}`);
+                    }
+                });
+
+                stream.on('error', error => {
+                    console.error(`[yt-dlp Process] 子進程執行失敗:`, error.message);
+                });
+
+                if (!stream.stdout) {
+                    throw new Error('無法獲取音訊串流。');
                 }
-            });
 
-            stream.on('error', error => {
-                console.error(`[yt-dlp Process] 子進程執行失敗:`, error.message);
-            });
-
-            if (!stream.stdout) {
-                throw new Error('無法獲取音訊串流。');
+                audioStream = stream.stdout;
+            } catch (streamError) {
+                console.error('音頻串流創建失敗:', streamError.message);
+                if (platform === 'tiktok') {
+                    return interaction.editReply('TikTok 影片的音頻格式不支援，請嘗試其他平台的影片 😅');
+                } else {
+                    return interaction.editReply(`音頻串流創建失敗: ${streamError.message}`);
+                }
             }
-
-            audioStream = stream.stdout;
         }
 
         console.log("音訊串流創建成功，準備連接語音頻道...");
@@ -255,7 +309,7 @@ export const execute = async (interaction) => {
             ]);
             
             console.log("語音連接和播放器均已就緒，音樂開始播放！");
-            await interaction.editReply(`🎶 開始播放： **${videoTitle}** ${isLive ? '📡 (直播)' : ''}`);
+            await interaction.editReply(`🎶 開始播放： **${videoTitle}** ${isLive ? '📡 (直播)' : ''} ${platform !== 'youtube' ? `[${platform.toUpperCase()}]` : ''}`);
         } catch (error) {
             console.error('等待播放器就緒時出錯:', error);
             throw new Error('播放器初始化失敗');
