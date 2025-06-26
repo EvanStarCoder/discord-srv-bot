@@ -1,14 +1,13 @@
-import { SlashCommandBuilder, EmbedBuilder, AttachmentBuilder } from 'discord.js';
+import { SlashCommandBuilder } from 'discord.js';
 import fs from 'fs';
 import path from 'path';
+// 引入我們之前建立的共用工具
 import { fixSocialLinks } from '@/core/utils.js';
 
-
-// 您的路徑定義不變
+// 您的路徑定義
 const mediaListPath = path.join(process.cwd(), 'src', 'media', 'italian_brainrot', 'italian_brainrot_data.json');
-const imagesPath = path.join(process.cwd(), 'src', 'media', 'italian_brainrot', 'assets', 'images');
-// 【移除】影片路徑的定義不再需要
-// const videosPath = path.join(process.cwd(), 'src', 'media', 'italian_brainrot', 'assets', 'videos');
+// 我們不再需要圖片路徑了
+// const imagesPath = path.join(process.cwd(), 'src', 'media', 'italian_brainrot', 'assets', 'images');
 
 export const command = new SlashCommandBuilder()
     .setName('italian-brainrot') // 或者 'random-media'
@@ -29,15 +28,6 @@ export const execute = async (interaction) => {
         const selectedItem = mediaArray[randomIndex];
         console.log(`隨機選擇的項目: ${selectedItem.name}`);
 
-        // --- 處理圖片的部分維持不變 ---
-        const imagePath = path.join(imagesPath, selectedItem.img);
-        if (!fs.existsSync(imagePath)) {
-            console.error(`圖片檔案缺失: ${imagePath}`);
-            return interaction.editReply('啊！好像找不到對應的圖片檔案耶... (´•̥ω•̥`)');
-        }
-        const imageAttachment = new AttachmentBuilder(imagePath);
-
-        // --- 【修改】處理影片的部分 ---
         // 直接從 JSON 中取得影片的 URL
         const videoUrl = selectedItem.video_links;
         if (!videoUrl) {
@@ -45,22 +35,16 @@ export const execute = async (interaction) => {
             return interaction.editReply('啊！這個項目好像沒有影片連結耶... (´•̥ω•̥`)');
         }
 
-        // 【新增】在發送前，呼叫工具函式來修復連結
+        // 使用我們的共用工具來修復連結
         const fixedVideoUrl = fixSocialLinks(videoUrl);
 
-        // --- 建立 Embed 的部分維持不變 ---
-        const encodedImageName = encodeURIComponent(selectedItem.img);
-        const embed = new EmbedBuilder()
-            .setColor('#0099ff')
-            .setTitle(`✨ ${selectedItem.name} ✨`)
-            .setImage(`attachment://${encodedImageName}`);
+        // 【最終修正】組合一則包含標題和連結的純文字訊息
+        const replyContent = `✨ **${selectedItem.name}** ✨\n${fixedVideoUrl}`;
 
-        // --- 【修改】最終回覆的結構 ---
-        // 我們現在發送一則訊息，它既有 content (影片連結)，也有 embeds 和 files (圖片)
+        // 發送最終的回覆
         await interaction.editReply({
-            content: fixedVideoUrl, // 將影片 URL 作為訊息的主要內容
-            embeds: [embed],
-            files: [imageAttachment] // files 陣列中現在只剩下圖片
+            content: replyContent,
+            // 確保 embeds 和 files 都是空的
         });
 
     } catch (error) {
