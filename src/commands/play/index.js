@@ -12,15 +12,15 @@ import {
 import youtubedl from 'youtube-dl-exec';
 import path from 'path';
 import { spawn } from 'child_process';
-import { PassThrough } from 'stream';
+//import { PassThrough } from 'stream';
 import { fileURLToPath } from 'url';
-import { dirname } from 'path';
+//import { dirname } from 'path';
 
 // 根據系統選擇 ffmpeg
 import ffmpegStatic from 'ffmpeg-static';
 
 const __filename = fileURLToPath(import.meta.url);
-const __dirname = dirname(__filename);
+//const __dirname = dirname(__filename);
 
 // 檢測系統並選擇合適的 ffmpeg 和 yt-dlp 路徑
 function getFFmpegPath() {
@@ -70,7 +70,7 @@ function getFormatSelector(platform) {
 }
 
 // 檢查是否為直播
-async function isLiveStream(url) {
+/*async function isLiveStream(url) {
     try {
         const info = await youtubedl(url, {
             quiet: true,
@@ -83,7 +83,7 @@ async function isLiveStream(url) {
         console.error('檢查直播狀態時出錯:', error);
         return false;
     }
-}
+}*/
 
 // 為直播創建專用的串流處理
 function createLiveStream(videoUrl) {

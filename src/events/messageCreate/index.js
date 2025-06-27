@@ -1,7 +1,7 @@
-import { EmbedBuilder } from 'discord.js'; // 保留以防未來使用，但目前非必需
-import { fixSocialLinks } from '../../core/utils.js';
-import { getLlmReply } from '../../core/chatService.js';
-import { useAppStore } from '../../store/app.js';
+//import { EmbedBuilder } from 'discord.js'; // 保留以防未來使用，但目前非必需
+import { fixSocialLinks } from '@/core/utils.js';
+import { getLlmReply } from '@/core/chatService.js';
+import { useAppStore } from '@/store/app.js';
 
 function escapeBackticks(text) {
     if (!text) return '';
@@ -38,9 +38,15 @@ export const action = async (message) => {
             renderedContent = renderedContent.replace(new RegExp(`<@&${role.id}>`, 'g'), `@${role.name}`);
         });
 
+        // 【修改一】在儲存時，加上 isMention 標記
         history.push({
-            id: message.id, author: authorDisplayName, content: renderedContent, timestamp: message.createdTimestamp,
+            id: message.id,
+            author: authorDisplayName,
+            content: renderedContent,
+            timestamp: message.createdTimestamp,
+            isMention: message.mentions.has(message.client.user) // 記住這是不是 @bot 的訊息
         });
+
         if (history.length > 20) history.shift();
         appStore.chatHistories.set(channelId, history);
     }
@@ -82,17 +88,24 @@ export const action = async (message) => {
                     let authorTag = `[${msg.author}]`;
                     if (msg.author === botName) {
                         const botDisplayName = message.guild?.members.me?.displayName ?? botName;
-                        authorTag = `[${botDisplayName}](妳自己)`;
+                        authorTag = `[${botDisplayName}](你自己)`;
+                    } else {
+                        // 【修改二】根據 isMention 標記來決定使用者標籤的格式
+                        if (msg.isMention) {
+                            authorTag = `[${msg.author}](對你說)`;
+                        } else {
+                            authorTag = `[${msg.author}]`;
+                        }
                     }
-                    return `[${timeString}] ${authorTag}說: ${msg.content}`;
+                    return `[${timeString}] ${authorTag}說： ${msg.content}`;
                 }).join('\n');
             }
         }
         
         if (!cleanMessage) {
-            llmMessage = `([${nickname}]標記妳。)`;
+            llmMessage = `([${nickname}]標記你。)`;
         } else {
-            llmMessage = `[${nickname}]對妳說: ${cleanMessage}`;
+            llmMessage = `[${nickname}]對你說： ${cleanMessage}`;
         }
         
         const assistantReply = await getLlmReply(llmHistory, llmMessage, message);
