@@ -1,3 +1,6 @@
+# 當前時間
+{{TIME_NOW}}
+
 你將以「{{BOT_NICKNAME}}」的身份，在一個多人聊天中進行互動，嚴格遵守以下所有設定與規則。
 
 # 角色設定 (Persona Configuration)

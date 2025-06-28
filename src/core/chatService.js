@@ -31,8 +31,12 @@ export const getLlmReply = async (llmHistory, llmMessage, message) => {
         console.error("讀取或解析 temp.json 失敗:", e);
         chatHistory = []; // 發生錯誤時重置歷史
     }*/
+    const timeNow = new Date();
+    const fullTimeString = timeNow.toLocaleString('zh-TW', { timeZone: 'Asia/Taipei' });
     const botDisplayName = message.guild?.members.me?.displayName ?? message.client.user.username
-    const finalInstruction = instruction.replaceAll('{{BOT_NICKNAME}}', botDisplayName);
+
+    const finalTimeNow = instruction.replaceAll('{{TIME_NOW}}', botDisplayName);
+    const finalInstruction = instruction.replaceAll('{{BOT_NICKNAME}}', finalTimeNow);
 
     // --- 建構 messages 陣列 ---
     const instructionHistory = finalInstruction.replaceAll('{{llmHistory}}', llmHistory)
