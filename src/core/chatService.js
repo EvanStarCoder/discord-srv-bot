@@ -34,9 +34,9 @@ export const getLlmReply = async (llmHistory, llmMessage, message) => {
     const timeNow = new Date();
     const fullTimeString = timeNow.toLocaleString('zh-TW', { timeZone: 'Asia/Taipei' });
     const botDisplayName = message.guild?.members.me?.displayName ?? message.client.user.username
-
-    const finalTimeNow = instruction.replaceAll('{{TIME_NOW}}', botDisplayName);
-    const finalInstruction = instruction.replaceAll('{{BOT_NICKNAME}}', finalTimeNow);
+    
+    const finalTimeNow = instruction.replaceAll('{{TIME_NOW}}', fullTimeString);
+    const finalInstruction = finalTimeNow.replaceAll('{{BOT_NICKNAME}}', botDisplayName);
 
     // --- 建構 messages 陣列 ---
     const instructionHistory = finalInstruction.replaceAll('{{llmHistory}}', llmHistory)
