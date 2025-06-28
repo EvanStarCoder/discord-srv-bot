@@ -62,7 +62,7 @@ export const getLlmReply = async (llmHistory, llmMessage, message) => {
                 temperature: 1.25,
                 top_k: 40,
                 top_p: 0.95,
-                max_tokens: 4096,
+                max_tokens: 2048,
                 // ...其他參數
             })
         });
